@@ -1,6 +1,19 @@
+CC 			 := g++
+CFLAGS 		 := 
 
+.PHONY: clean
 
-main: main.c linked_list.h 
-	gcc main.c -o $@
+a.out: main.o filesystem.o
+	$(CC) -g -o $@ $(CFLAGS) $^
 
+main.o: main.cpp
+filesystem.o: filesystem.cpp
 
+main.cpp: filesystem.h
+filesystem.cpp: filesystem.h
+
+clean:
+	rm -vf -- a.out *.o
+
+%.o: %.cpp
+	$(CC) -g -c -o $@ $(CFLAGS) $^
