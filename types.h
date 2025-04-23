@@ -11,6 +11,7 @@ typedef char name_t[32];
 // Computerd Constants
 #define FILE_NODE_DATA_SIZE (SECTOR_SIZE - 2 * sizeof(sector_t))
 #define ENTRY_DATA_SIZE (SECTOR_SIZE - sizeof(sector_t) - sizeof(uint64_t) - sizeof(e_entry_type_t) - sizeof(name_t))
+#define ENTRY_CHILDREN_SIZE (ENTRY_DATA_SIZE / sizeof(sector_t))
 #define HEADER_RANGES_SIZE ((SECTOR_SIZE - sizeof(uint32_t) - sizeof(uint32_t)) / sizeof(allocator_range_t))
 
 // Enums
@@ -43,7 +44,7 @@ typedef struct __attribute__((packed)) {
         uint8_t data[ENTRY_DATA_SIZE];
 
         // Directories
-        sector_t children[ENTRY_DATA_SIZE / sizeof(sector_t)];
+        sector_t children[ENTRY_CHILDREN_SIZE];
 
         // Files
         file_info_t file;
