@@ -10,6 +10,7 @@ using namespace std;
 #include <sys/mman.h>
 
 #include <string>
+#include <fstream>
 
 class MyFilesystem {
     private:
@@ -26,8 +27,12 @@ class MyFilesystem {
 
         void format();
 
+        void defragment();
         sector_t alloc_sector();
         void free_sector(sector_t i);
+
+        // Debugging
+        void debug_heap(string path);
 };
 
 #endif // _FILESYSTEM_H

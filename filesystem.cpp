@@ -57,6 +57,7 @@ void MyFilesystem::format() {
         .root_entry = 1,
         .heap_size = 1,
         .ranges = {
+            {},
             {
                 .start = 2,
                 .end = (sector_t) (size / SECTOR_SIZE)
@@ -73,17 +74,21 @@ void MyFilesystem::format() {
     };
 }
 
+void MyFilesystem::defragment() {
+
+}
+
 sector_t MyFilesystem::alloc_sector() {
     // Increment the lowest range (and remember the sector)
-    sector_t ret = disk->header.ranges[0].start++;
+    sector_t ret = disk->header.ranges[1].start++;
 
     // If the range is empty, pop and discard it
-    if(disk->header.ranges[0].start >= disk->header.ranges[0].end) {
+    if(disk->header.ranges[1].start >= disk->header.ranges[1].end) {
         uint32_t i = --disk->header.heap_size;
-        disk->header.ranges[0] = disk->header.ranges[i];
+        disk->header.ranges[1] = disk->header.ranges[i];
 
         // Percolate
-        while(1) {
+        while(i <= disk[0].header.heap_size) {
             allocator_range_t *parent = &disk->header.ranges[i];
             allocator_range_t *right  = &disk->header.ranges[2 * i + 1];
             allocator_range_t *left   = &disk->header.ranges[2 * i];
@@ -98,8 +103,10 @@ sector_t MyFilesystem::alloc_sector() {
 
             if(left->start < right->start) {
                 child = left;
+                i = 2 * i;
             } else {
                 child = right;
+                i = 2 * i + 1;
             }
 
             if(child->start < parent->start) {
@@ -124,14 +131,14 @@ void MyFilesystem::free_sector(sector_t sector) {
         // }
     }
 
-    uint32_t i = disk->header.heap_size++;
+    uint32_t i = ++disk->header.heap_size;
     disk->header.ranges[i] = {
         .start = sector,
-        .end = sector
+        .end = sector + 1
     };
 
     // Percolate
-    while(1) {
+    while(i >= 1) {
         allocator_range_t *parent = &disk->header.ranges[i / 2];
         allocator_range_t *child  = &disk->header.ranges[i];
 
@@ -139,8 +146,22 @@ void MyFilesystem::free_sector(sector_t sector) {
             allocator_range_t temp = *child;
             *child = *parent;
             *parent = temp;
+
+            i /= 2;
         } else {
             break;
         }
     }
+}
+
+
+void MyFilesystem::debug_heap(string path) {
+    ofstream f(path);
+    f << "digraph {" << endl;
+    f << "\t" << disk[0].header.ranges[1].start << " [label=\"" << disk[0].header.ranges[1].start << "-" << disk[0].header.ranges[1].end << "\"]" << endl;
+    for(int i = 2; i < disk[0].header.heap_size; i++) {
+        f << "\t" << disk[0].header.ranges[i].start << " [label=\"" << disk[0].header.ranges[i].start << "-" << disk[0].header.ranges[i].end << "\"]" << endl;
+        f << "\t" << disk[0].header.ranges[i].start << " -> " << disk[0].header.ranges[i / 2].start << endl;
+    }
+    f << "}" << endl;
 }
