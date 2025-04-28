@@ -1,4 +1,5 @@
 #include "filesystem.h"
+#include <cstring>
 
 #include <unordered_map>
 #include <vector>
@@ -178,4 +179,99 @@ void MyFilesystem::debug_heap(string path) {
         f << "\t" << disk[0].header.ranges[i].start << " -> " << disk[0].header.ranges[i / 2].start << endl;
     }
     f << "}" << endl;
+}
+sector_t my_hash(string name){
+        sector_t sum=0;
+        for(int i=0; i<name.length(); i++){
+                sum+=name[i];
+        }
+        sum*=7;
+        return sum%ENTRY_CHILDREN_SIZE;
+}
+
+
+
+//access element in the hashtable by name
+sector_t MyFilesystem::entry_access(name_t name, sector_union_t* block){
+        if(block==nullptr){
+                return -1;
+        }
+
+	sector_t* children= block->entry.children;
+        sector_t index = my_hash(name);
+
+        //linear probing
+
+	if(children[index]==0){
+		return -1; // entry does not exist
+	}
+	name_t name_temp; 
+	if(children[index]!=-1){
+		strcpy(name_temp,disk[children[index]].entry.name);
+	}
+	while(children[index]!=0 && strcmp(name_temp,name)!=0){
+		index+=1;
+		index%=ENTRY_CHILDREN_SIZE;
+		if(children[index]==0){
+			break;
+		}
+		//-1 is tombstone
+		if(children[index]==-1){
+			continue;
+		}
+		strcpy(name_temp,disk[children[index]].entry.name);
+		printf("%s\n",name_temp);
+	}
+	if(children[index]==0){
+		return -1;
+	}
+        return index;
+
+}
+
+//insert element in the hashtable by name
+//currently only uses name but in the future a type could be useful
+int MyFilesystem::entry_insert(entry_t entry, sector_union_t* block){
+	name_t name;
+	strcpy(name,entry.name);
+	
+        if(block==nullptr){
+                return -1;
+        }
+
+	sector_t* children= block->entry.children;
+        sector_t index = my_hash(name);
+
+        //linear probing
+
+	while(children[index]!=0 && (children[index]!=-1)){
+		index+=1;
+		index%=ENTRY_CHILDREN_SIZE;
+		if(children[index]==0){
+			break;
+		}
+		//-1 is tombstone
+		if(children[index]==-1){
+			break;
+		}
+	}
+
+	children[index]=alloc_sector();
+	sector_t macro_index = children[index];
+	disk[macro_index].entry = entry;
+	printf("%d\n",index);
+	
+	return 0; // success
+}
+int MyFilesystem::entry_remove(name_t name, sector_union_t* block){
+
+	sector_t index = entry_access(name,block);
+	if(index==-1){
+		return -1; //throw error
+	}
+
+	free_sector(block->entry.children[index]);
+	block->entry.children[index] = -1; // place tombstone
+	return 0; // success
+
 }
