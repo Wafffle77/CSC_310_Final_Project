@@ -83,17 +83,19 @@ int comp_allocator_ranges(const void *a, const void *b) {
 }
 
 void MyFilesystem::defragment() {
-    qsort(disk[0].header.ranges + 1, disk[0].header.heap_size - 1, sizeof(allocator_range_t), comp_allocator_ranges);
-    
-    for(int i = 1; i <= disk[0].header.heap_size - 2; i++) {
+    allocator_range_t temp[HEADER_RANGES_SIZE];
+    memcpy(temp, disk[0].header.ranges, sizeof(temp));
+    qsort(temp + 1, disk[0].header.heap_size - 1, sizeof(allocator_range_t), comp_allocator_ranges);
+
+    for(int i = 1; i <= disk[0].header.heap_size - 1; i++) {
         allocator_range_t *cur       = &disk[0].header.ranges[i];
         allocator_range_t *next      = &disk[0].header.ranges[i+1];
-        allocator_range_t *next_next = &disk[0].header.ranges[i+2];
+
+        if(cur->start == 0) continue;
 
         if(cur->end >= next->start) {
             cur->end = next->end;
-            *next = *next_next;
-            i--;
+            next->start = 0;
         }
     }
 }
