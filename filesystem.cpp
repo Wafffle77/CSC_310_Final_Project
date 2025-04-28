@@ -1,5 +1,8 @@
 #include "filesystem.h"
 
+#include <unordered_map>
+#include <vector>
+
 using namespace std;
 
 MyFilesystem::MyFilesystem(sector_union_t* disk_ptr, uint64_t disk_size) {
@@ -74,8 +77,24 @@ void MyFilesystem::format() {
     };
 }
 
-void MyFilesystem::defragment() {
+int comp_allocator_ranges(const void *a, const void *b) {
+    return (((allocator_range_t*)a)->start - ((allocator_range_t*)b)->start);
+}
 
+void MyFilesystem::defragment() {
+    qsort(disk[0].header.ranges + 1, disk[0].header.heap_size - 1, sizeof(allocator_range_t), comp_allocator_ranges);
+    
+    for(int i = 1; i <= disk[0].header.heap_size - 2; i++) {
+        allocator_range_t *cur       = &disk[0].header.ranges[i];
+        allocator_range_t *next      = &disk[0].header.ranges[i+1];
+        allocator_range_t *next_next = &disk[0].header.ranges[i+2];
+
+        if(cur->end >= next->start) {
+            cur->end = next->end;
+            *next = *next_next;
+            i--;
+        }
+    }
 }
 
 sector_t MyFilesystem::alloc_sector() {
@@ -123,12 +142,7 @@ sector_t MyFilesystem::alloc_sector() {
 
 void MyFilesystem::free_sector(sector_t sector) {
     if(disk->header.heap_size + 1 >= HEADER_RANGES_SIZE) {
-        // Defrag (expensive)
-
-        // Eh I'll finish this later when it's an issue
-        // for(uint32_t i = 0; i < HEADER_RANGES_SIZE; i++) {
-        //     disk->header.ranges[i]
-        // }
+        defragment();
     }
 
     uint32_t i = ++disk->header.heap_size;

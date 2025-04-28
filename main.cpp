@@ -16,7 +16,9 @@ int main() {
 		allocated_sectors.pop_back();
 	}
 
-	fs.debug_heap("heap.dot");
+	fs.defragment();
+
+	fs.debug_heap("heap2.dot");
 
 	return 0;
 }
