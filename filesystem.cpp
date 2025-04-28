@@ -190,7 +190,8 @@ sector_t my_hash(string name) {
 }
 
 //access element in the hashtable by name
-sector_t MyFilesystem::entry_access(name_t name, sector_union_t* block) {
+sector_t MyFilesystem::entry_access(name_t name, sector_t block_index) {
+	sector_union_t* block = &disk[block_index];
     if(block == nullptr){
         return -1;
     }
@@ -230,8 +231,10 @@ sector_t MyFilesystem::entry_access(name_t name, sector_union_t* block) {
 
 //insert element in the hashtable by name
 //currently only uses name but in the future a type could be useful
-int MyFilesystem::entry_insert(entry_t entry, sector_union_t* block){
-	
+int MyFilesystem::entry_insert(entry_t entry, sector_t block_index){
+
+sector_union_t* block = &disk[block_index];
+
     if(block == nullptr){
         return -1;
     }
@@ -260,9 +263,10 @@ int MyFilesystem::entry_insert(entry_t entry, sector_union_t* block){
 	return 0; // success
 }
 
-int MyFilesystem::entry_remove(name_t name, sector_union_t* block){
+int MyFilesystem::entry_remove(name_t name,sector_t block_index){
 
-	sector_t index = entry_access(name,block);
+	sector_union_t* block = &disk[block_index];
+	sector_t index = entry_access(name,block_index);
 	if(index==-1){
 		return -1; //throw error
 	}
