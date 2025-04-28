@@ -34,8 +34,7 @@ typedef struct {
     uint64_t size;
 } file_info_t;
 
-// This needs to be packed because reasons (The reason is alignment)
-typedef struct __attribute__((packed)) {
+typedef struct {
     sector_t parent;
     uint64_t metadata;
     e_entry_type_t type;
