@@ -14,13 +14,11 @@ using namespace std;
 
 class MyFilesystem {
     private:
-        //sector_union_t* disk;
+        sector_union_t* disk;
         int fd;
         uint64_t size;
 
     public:
-	//I am making the disk public for testing purposes, in the final version we can make this private again 
-        sector_union_t* disk;
         MyFilesystem(sector_union_t* disk, uint64_t disk_size);
         MyFilesystem(string path);
         MyFilesystem(sector_t sectors);
@@ -40,9 +38,9 @@ class MyFilesystem {
 
 
 	//Hash Table functions
-	sector_t entry_access(char* name, sector_union_t* block);
-	int entry_insert(entry_t entry, sector_union_t* block);
-	int entry_remove(char* name, sector_union_t* block);
+	sector_t entry_access(char* name, sector_t block_index);
+	int entry_insert(entry_t entry, sector_t block_index);
+	int entry_remove(char* name, sector_t block_index);
 };
 
 #endif // _FILESYSTEM_H

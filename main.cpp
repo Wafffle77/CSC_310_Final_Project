@@ -38,8 +38,8 @@ int main() {
 
 		if(input==0){
 			entry_t entry;
-			strcpy(entry.name,name);
-			int success = fs.entry_insert(entry,&fs.disk[1]);
+			strncpy(entry.name,name,sizeof(name_t));
+			int success = fs.entry_insert(entry,1);
 			if(success== -1){
 				cout<<"insertion failed :( "<<endl;
 			}
@@ -49,7 +49,7 @@ int main() {
 
 		}
 		if(input==1){
-			sector_t index = fs.entry_access(name,&fs.disk[1]);
+			sector_t index = fs.entry_access(name,1);
 			if(index== (uint32_t)-1){
 				cout<<"sorry that name is not found in this sector union :( "<<endl;
 			}
@@ -58,7 +58,7 @@ int main() {
 			}
 		}
 		if(input==2){
-			int success = fs.entry_remove(name,&fs.disk[1]);
+			int success = fs.entry_remove(name,1);
 			if(success== -1){
 				cout<<"removal failed :( "<<endl;
 			}
