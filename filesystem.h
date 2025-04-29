@@ -12,6 +12,10 @@ using namespace std;
 #include <string>
 #include <fstream>
 
+
+
+#include <vector>
+
 class MyFilesystem {
     private:
         sector_union_t* disk;
@@ -57,6 +61,11 @@ class MyFilesystem {
         sector_t entry_access(char* name, sector_t block_index);
         sector_t entry_insert(entry_t entry, sector_t block_index);
         sector_t entry_remove(char* name, sector_t block_index);
+
+
+
+
+vector<entry_t>	 readdir(string path);
     };
 
 #endif // _FILESYSTEM_H

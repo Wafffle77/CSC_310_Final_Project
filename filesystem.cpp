@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
+#include <algorithm>
 
 using namespace std;
 
@@ -387,3 +388,25 @@ sector_t MyFilesystem::mkdir(string name, sector_t dir) {
 
     return entry_insert(child, dir);
 }
+
+
+
+bool compare_entries(entry_t entry_one, entry_t entry_two){
+	return strncmp(entry_one.name,entry_two.name,sizeof(name_t))<0;
+}
+
+
+#define CHILDREN disk[sector].entry.children[index]
+vector<entry_t>	 MyFilesystem::readdir(string path){
+	sector_t sector = resolve(path);
+
+	vector<entry_t> entries;
+	for(int index = 0; index<ENTRY_CHILDREN_SIZE; index++){
+		if(CHILDREN!=0){
+			entries.push_back(disk[CHILDREN].entry);
+		}
+	}
+	sort(entries.begin(),entries.end(),compare_entries);
+	return entries;
+}
+#undef CHILDREN 
