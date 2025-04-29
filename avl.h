@@ -40,6 +40,7 @@ class AVL{
 	Node* root;
 
 	Node* Insert(Node* cur,Node* item);
+	Node* Remove(Node* cur,name_t name);
 
 	int get_balance_factor(Node*);
 
@@ -70,6 +71,7 @@ class AVL{
 		return sorted_entries;
 	}
 
+void Remove(name_t name);
 
 
 };

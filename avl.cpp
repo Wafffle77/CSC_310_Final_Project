@@ -70,22 +70,22 @@ AVL::Node* AVL::Insert(Node* cur,Node* item){
 
 	int bf = get_balance_factor(cur);
 	//right-right case
-	if(bf > 1 && get_balance_factor(cur->right)>0){
+	if(bf > 1 && get_balance_factor(cur->right)>1){
 		return left_rotate(cur);
 	}
 	//left-left case
-	if(bf < -1 && get_balance_factor(cur->left)<0){
+	if(bf < -1 && get_balance_factor(cur->left)<-1){
 		return right_rotate(cur);
 	}
 	
 	//right-left case
-	if(bf > 1 && get_balance_factor(cur->right)<0){
-		cur->right=right_rotate(cur->right);
+	if(bf > 1 && get_balance_factor(cur->right)<-1){
+		cur->right=left_rotate(cur->right);
 		return left_rotate(cur);
 	}
 	//left-right case
-	if(bf < -1 && get_balance_factor(cur->right)>0){
-		cur->left=left_rotate(cur->left);
+	if(bf < -1 && get_balance_factor(cur->right)>1){
+		cur->left=right_rotate(cur->left);
 		return right_rotate(cur);
 	}
 
@@ -97,4 +97,84 @@ AVL::Node* AVL::Insert(Node* cur,Node* item){
 void AVL::Insert(entry_t item){
 	Node* cur = new Node(item);
 	root = Insert(root,cur);
+}
+
+AVL::Node* AVL::Remove(Node* cur,name_t name){
+	if(cur==nullptr){
+		return cur;
+	}
+	else if(strncmp(cur->data.name,name,sizeof(name_t))<0){
+		cur->left=Remove(cur->left,name);
+	}
+	else if(strncmp(cur->data.name,name,sizeof(name_t))>0){
+		cur->right=Remove(cur->right,name);
+	}
+	else{
+		//one child and leaf cases
+		if(!cur->left){
+			Node* temp = cur->right;
+			delete cur;
+			return temp;
+		}
+		if(!cur->right){
+			Node* temp = cur->left;
+			delete cur;
+			return temp;
+		}
+
+
+		//get smallest child in right subtree
+		Node* parent = cur;
+		Node* tmp = cur->right;
+		while(tmp->left){
+			parent=tmp;
+			tmp=tmp->left;
+		}
+		cur->data = tmp->data;
+		strncpy(cur->data.name,tmp->data.name,sizeof(name_t));
+
+		cur->right = Remove(cur->right,tmp->data.name);
+	}
+	
+	if(!cur){
+		return cur;
+	}
+	
+	//update heights and balace factors
+	
+	if(cur->right&&cur->left){
+		cur->height = 1+ max( cur->right->height, cur-> left->height);
+	}
+	else if(cur->right){
+		cur->height = 1+ cur->right->height;
+	}
+	else if(cur->left){
+		cur->height = 1+ cur->left->height;
+	}
+
+	int bf = get_balance_factor(cur);
+	//right-right case
+	if(bf > 1 && get_balance_factor(cur->right)>1){
+		return left_rotate(cur);
+	}
+	//left-left case
+	if(bf < -1 && get_balance_factor(cur->left)<-1){
+		return right_rotate(cur);
+	}
+	//right-left case
+	if(bf > 1 && get_balance_factor(cur->right)<-1){
+		cur->right=right_rotate(cur->right);
+		return left_rotate(cur);
+	}
+	//left-right case
+	if(bf < -1 && get_balance_factor(cur->right)>1){
+		cur->left=left_rotate(cur->left);
+		return right_rotate(cur);
+	}
+
+	return cur;
+
+}
+void AVL::Remove(name_t name){
+	root = Remove(root,name);
 }

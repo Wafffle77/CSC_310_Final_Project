@@ -11,17 +11,19 @@ using namespace std;
 
 
 void test_avl(){
-	AVL avl;
-		entry_t entry;
-		strncpy(entry.name,"apple",sizeof(name_t));
-		
-		avl.Insert(entry);
 
-		strncpy(entry.name,"carrot",sizeof(name_t));
+
+	int num_elements = 10;
+	name_t words[num_elements] = {"hello","math","chicken","wolf","dolphin","memes","apple","banana","whale","zebra"};
+
+
+	AVL avl;
+	for(int i=0; i<num_elements; i++){
+		entry_t entry;
+		strncpy(entry.name,words[i],sizeof(name_t));
 		avl.Insert(entry);
+	}
 		
-		strncpy(entry.name,"banana",sizeof(name_t));
-		avl.Insert(entry);
 
 	vector<entry_t> nums = avl.Sort();
 
@@ -29,10 +31,10 @@ void test_avl(){
 		cout<<nums[i].name<<" ";
 	}
 
+
 }
 
 int main() {
-	//test_avl();
 	MyFilesystem fs("test_disk.img");
 	fs.format();
 	vector<sector_t> allocated_sectors;
