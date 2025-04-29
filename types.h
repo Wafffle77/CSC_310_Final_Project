@@ -36,8 +36,8 @@ typedef struct {
 
 typedef struct {
     sector_t parent;
-    uint64_t metadata;
     e_entry_type_t type;
+    uint64_t metadata;
     name_t name;
     union {
         uint8_t data[ENTRY_DATA_SIZE];
