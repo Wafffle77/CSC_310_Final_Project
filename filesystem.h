@@ -18,6 +18,17 @@ class MyFilesystem {
         int fd;
         uint64_t size;
 
+        // Resolving paths
+        sector_t resolve(const char *path, sector_t entry);
+
+        // Returns the number of characters
+        static inline int str2name(string in, name_t out) {
+            int i;
+            for(i = 0; i < in.length() && i < sizeof(name_t); i++)
+                out[i] = in[i];
+            return i;
+        }
+
     public:
         MyFilesystem(sector_union_t* disk, uint64_t disk_size);
         MyFilesystem(string path);
@@ -33,14 +44,19 @@ class MyFilesystem {
 
         // Debugging
         void debug_heap(string path);
+        void debug_tree(string path);
+
+        // Resolving paths
+        sector_t resolve(string path);
+
+        sector_t create(string name, sector_t dir);
+        sector_t mkdir(string name, sector_t dir);
 
 
-
-
-	//Hash Table functions
-	sector_t entry_access(char* name, sector_t block_index);
-	int entry_insert(entry_t entry, sector_t block_index);
-	int entry_remove(char* name, sector_t block_index);
-};
+        //Hash Table functions
+        sector_t entry_access(char* name, sector_t block_index);
+        sector_t entry_insert(entry_t entry, sector_t block_index);
+        sector_t entry_remove(char* name, sector_t block_index);
+    };
 
 #endif // _FILESYSTEM_H
