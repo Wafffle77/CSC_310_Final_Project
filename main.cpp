@@ -5,6 +5,7 @@
 
 #include "avl.h"
 
+#include <sstream>
 #include <iostream>
 using namespace std;
 
@@ -50,11 +51,32 @@ int main()
 
 	sector_t s = fs.resolve("/dir/zxcv");
 	// cout << zxcv << endl << s << endl;
-	vector<entry_t> entries = fs.readdir("/bin");
-	for (int i = 0; i < entries.size(); i++)
-	{
-		cout << entries[i].name << endl;
+	// vector<entry_t> entries = fs.readdir("/bin");
+	// for (int i = 0; i < entries.size(); i++)
+	// {
+	// 	cout << entries[i].name << endl;
+	// }
+
+	fs.create("filesystem.cpp", root);
+
+
+	int fd = fs.open("/filesystem.cpp");
+	ifstream f("filesystem.cpp");
+	stringstream stsr;
+	stsr << f.rdbuf();
+	string data = stsr.str();
+	
+	cout << fs.write(fd, (uint8_t*) data.c_str(), data.length()) << endl;
+	fs.close(fd);
+
+	fd = fs.open("/filesystem.cpp");
+	uint8_t test_buffer[4096] = {0};
+	while(!fs.eof(fd)) {
+		uint64_t bytes_read = fs.read(fd, test_buffer, sizeof(test_buffer));
+		write(1, test_buffer, bytes_read);
+		// cout << (char*) test_buffer << endl;
 	}
+	fs.close(fd);
 
 	fs.defragment();
 	fs.debug_heap("heap2.dot");

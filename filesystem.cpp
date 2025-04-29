@@ -1,6 +1,7 @@
 #include "filesystem.h"
-#include <cstring>
+#include <stdlib.h>
 
+#include <cstring>
 #include <unordered_map>
 #include <vector>
 #include <queue>
@@ -9,6 +10,8 @@
 #include "avl.h"
 
 using namespace std;
+
+#define MIN(a,b) (a<b?a:b)
 
 MyFilesystem::MyFilesystem(sector_union_t *disk_ptr, uint64_t disk_size)
 {
@@ -27,7 +30,7 @@ MyFilesystem::MyFilesystem(sector_t sectors)
 // TODO: use exceptions in this
 MyFilesystem::MyFilesystem(string path)
 {
-	fd = open(path.c_str(), O_RDWR);
+	fd = ::open(path.c_str(), O_RDWR);
 	if (fd == -1)
 	{
 		perror("Unable to open disk");
@@ -61,7 +64,7 @@ MyFilesystem::~MyFilesystem()
 			exit(1);
 		}
 
-		status = close(fd);
+		status = ::close(fd);
 		if (status != 0)
 		{
 			perror("Unable to close disk");
@@ -77,8 +80,12 @@ void MyFilesystem::format()
 		.heap_size = 1,
 		.ranges = {
 			{},
-			{.start = 2,
-			 .end = (sector_t)(size / SECTOR_SIZE)}}};
+			{
+				.start = 2,
+				.end = (sector_t)(size / SECTOR_SIZE)
+			}
+		}
+	};
 
 	disk[1].entry = {
 		.parent = 0,
@@ -197,6 +204,7 @@ sector_t MyFilesystem::alloc_sector()
 
 void MyFilesystem::free_sector(sector_t sector)
 {
+	if(sector == 0) return;
 	if (disk->header.heap_size + 1 >= HEADER_RANGES_SIZE)
 	{
 		defragment();
@@ -262,7 +270,7 @@ void MyFilesystem::debug_tree(string path)
 
 		f << "\t" << cur << " [label=\"" << entry.name << "\" color=\"" << COLOR_MAP[entry.type] << "\"]" << endl;
 
-		if (entry.type = ENTRY_TYPE_DIRECTORY)
+		if (entry.type == ENTRY_TYPE_DIRECTORY)
 		{
 			for (int i = 0; i < ENTRY_CHILDREN_SIZE; i++)
 			{
@@ -270,6 +278,19 @@ void MyFilesystem::debug_tree(string path)
 					continue;
 				q.push(entry.children[i]);
 				f << "\t" << cur << " -> " << entry.children[i] << endl;
+			}
+		}
+
+		if (entry.type == ENTRY_TYPE_FILE) {
+			if(entry.file.start != 0)
+				f << "\t" << cur << " -> " << entry.file.start << endl;
+			if(entry.file.end != 0)
+				f << "\t" << cur << " -> " << entry.file.end << endl;
+			for(sector_t cur = entry.file.start; cur != 0; cur = disk[cur].file_node.next) {
+				f << "\t" << cur << " [color=\"magenta\"]" << endl;
+				sector_t n = disk[cur].file_node.next;
+				if(n != 0)
+					f << "\t" << cur << " -> " << n << endl;
 			}
 		}
 	}
@@ -449,11 +470,15 @@ bool compare_entries(entry_t entry_one, entry_t entry_two)
 	return strncmp(entry_one.name, entry_two.name, sizeof(name_t)) < 0;
 }
 
-#define CHILDREN disk[sector].entry.children[index]
-vector<entry_t> MyFilesystem::readdir(string path)
-{
-	sector_t sector = resolve(path);
 
+vector<entry_t> MyFilesystem::readdir(string path) {
+	sector_t sector = resolve(path);
+	return readdir(sector);
+}
+
+#define CHILDREN disk[sector].entry.children[index]
+vector<entry_t> MyFilesystem::readdir(sector_t sector)
+{
 	AVL avl;
 	for (int index = 0; index < ENTRY_CHILDREN_SIZE; index++)
 	{
@@ -465,3 +490,141 @@ vector<entry_t> MyFilesystem::readdir(string path)
 	return avl.Sort();
 }
 #undef CHILDREN
+
+
+int MyFilesystem::open(string path) {
+	sector_t f = resolve(path);
+	if(f == 0 || disk[f].entry.type != ENTRY_TYPE_FILE) {
+		return -1;
+	}
+
+	open_file_t entry = {
+		.file = f,
+		.cur = disk[f].entry.file.start,
+		.pos = 0,
+	};
+
+	int fd = rand();
+	fd_table[fd] = entry;
+	return fd;
+}
+
+void MyFilesystem::close(int fd) {
+	fd_table.erase(fd);
+}
+
+// Truncates a file to end at the current position
+void MyFilesystem::trunc(int fd) {
+	open_file_t* f = &fd_table[fd];
+	entry_t* entry = &disk[f->file].entry;
+	entry->file.size = f->pos;
+	entry->file.end = f->cur;
+	sector_t cur = disk[f->cur].file_node.next;
+	while(cur != 0) {
+		free_sector(cur);
+		cur = disk[cur].file_node.next;
+	}
+}
+
+uint64_t MyFilesystem::read(int fd, uint8_t *buf, uint64_t len) {
+	open_file_t* f = &fd_table[fd];
+	entry_t* entry = &disk[f->file].entry;
+	uint64_t bytes_read = 0;
+	while(len > 0 && f->pos < entry->file.size && f->cur != 0) {
+		uint64_t in_node_pos = f->pos % FILE_NODE_DATA_SIZE;
+		uint64_t copy_size = FILE_NODE_DATA_SIZE - in_node_pos;
+		if(len < copy_size)
+			copy_size = len;
+		if(entry->file.size - f->pos < copy_size)
+			copy_size = entry->file.size - f->pos;
+		memcpy(buf, disk[f->cur].file_node.data + in_node_pos, copy_size);
+		buf += copy_size;
+		bytes_read += copy_size;
+		len -= copy_size;
+		f->pos += copy_size;
+		if(len > 0)
+			f->cur = disk[f->cur].file_node.next;
+	}
+	return bytes_read;
+}
+
+uint64_t MyFilesystem::write(int fd, uint8_t *buf, uint64_t len) {
+	open_file_t* f = &fd_table[fd];
+	entry_t* entry = &disk[f->file].entry;
+	uint64_t bytes_read = 0;
+	while(len > 0 && f->pos < entry->file.size && f->cur != 0) {
+		uint64_t in_node_pos = f->pos % FILE_NODE_DATA_SIZE;
+		uint64_t copy_size = FILE_NODE_DATA_SIZE - in_node_pos;
+		memcpy(disk[f->cur].file_node.data + in_node_pos, buf, copy_size);
+		buf += copy_size;
+		len -= copy_size;
+		bytes_read += copy_size;
+		f->pos += copy_size;
+		f->cur = disk[f->cur].file_node.next;
+	}
+
+	while(len > 0) {
+		sector_t new_end = alloc_sector();
+		disk[new_end].file_node.prev = entry->file.end;
+		disk[entry->file.end].file_node.next = new_end;
+		disk[new_end].file_node.next = 0;
+
+		uint64_t copy_size = FILE_NODE_DATA_SIZE;
+		if(FILE_NODE_DATA_SIZE > len)
+			copy_size = len;
+
+		memcpy(disk[new_end].file_node.data, buf, copy_size);
+
+		buf += copy_size;
+		len -= copy_size;
+		bytes_read += copy_size;
+		f->pos += copy_size;
+		f->cur = disk[new_end].file_node.next;
+		
+		entry->file.size = f->pos + 1;
+		entry->file.end = new_end;
+		if(entry->file.start == 0)
+			entry->file.start = new_end;
+	}
+
+	return bytes_read;
+}
+
+uint64_t MyFilesystem::seek(int fd, int64_t offset, int whence) {
+	open_file_t* f = &fd_table[fd];
+	entry_t* entry = &disk[f->file].entry;
+
+	switch(whence) {
+		case MY_SEEK_END:
+			offset = entry->file.size - offset;
+			// Look ma, no break!
+		case MY_SEEK_SET:
+			offset -= f->pos;
+			break;
+		case MY_SEEK_CUR:
+			offset = f->pos + offset;
+			break;
+	}
+
+	bool forward = offset > 0;
+
+	uint64_t pos_in_node = f->pos % FILE_NODE_DATA_SIZE;
+	offset += pos_in_node;
+	f->pos -= pos_in_node;
+
+	while(f->cur != 0 && offset >= FILE_NODE_DATA_SIZE) {
+		if(forward)
+			f->cur = disk[f->cur].file_node.next;
+		else
+			f->cur = disk[f->cur].file_node.prev;
+		f->pos += FILE_NODE_DATA_SIZE;
+		offset -= FILE_NODE_DATA_SIZE;
+	}
+	
+	f->pos += offset;
+	return f->pos;
+}
+
+bool MyFilesystem::eof(int fd) {
+	return fd_table[fd].pos == disk[fd_table[fd].file].entry.file.size;
+}

@@ -49,7 +49,7 @@ uint64_t my_close(int fd){
 
 // Reads count bytes from the file at the current position into buf
 // Returns bytes read
-uint64_t my_read(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count){
+uint64_t my_read(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count) {
 
 	if(!processes[fd].busy){
 		printf("INVALID FILE DESCRIPTOR\n");
@@ -79,7 +79,7 @@ uint64_t my_read(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count){
 // This will overwrite data if it's in the middle of the file and
 // append data if it's at the end of the file.
 // Returns bytes written
-uint64_t my_write(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count){
+uint64_t my_write(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count) {
 	if(!processes[fd].busy){
 		printf("INVALID FILE DESCRIPTOR\n");
 		return 1;
@@ -114,7 +114,7 @@ uint64_t my_write(int fd, uint8_t buf[BUFFER_SIZE], uint64_t count){
 // - SEEK_SET is the start
 // - SEEK_END is the end
 // - SEEK_CUR is the current position (can be negative)
-uint64_t my_seek(int fd, int64_t offset, int whence){
+uint64_t my_seek(int fd, int64_t offset, int whence) {
 	if(whence==SEEK_SET){
 		if(offset<0){
 			return -1; //out of bounds error
