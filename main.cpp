@@ -12,12 +12,11 @@ int main() {
 
 	vector<sector_t> allocated_sectors;
 
-	for(int i = 0; i < 16; i++)
+	for(int i = 0; i < 200; i++)
 		allocated_sectors.push_back(fs.alloc_sector());
 
 
 	fs.debug_heap("heap.dot");
-
 
 	int input = 0;
 
@@ -72,14 +71,11 @@ int main() {
 		cout<<endl;
 
 	}
-
-	for(int i = 0; i < 16; i++) {
+	for(int i = 0; i < 200; i++) {
 		fs.free_sector(allocated_sectors.back());
 		allocated_sectors.pop_back();
 	}
-
 	fs.defragment();
-
 	fs.debug_heap("heap2.dot");
 
 	return 0;
