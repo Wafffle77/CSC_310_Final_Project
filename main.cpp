@@ -11,14 +11,11 @@ using namespace std;
 
 
 void test_avl(){
-
-
-	int num_elements = 10;
-	name_t words[num_elements] = {"hello","math","chicken","wolf","dolphin","memes","apple","banana","whale","zebra"};
+	name_t words[] = {"hello","math","chicken","wolf","dolphin","memes","apple","banana","whale","zebra"};
 
 
 	AVL avl;
-	for(int i=0; i<num_elements; i++){
+	for(int i=0; i<sizeof(words); i++){
 		entry_t entry;
 		strncpy(entry.name,words[i],sizeof(name_t));
 		avl.Insert(entry);
