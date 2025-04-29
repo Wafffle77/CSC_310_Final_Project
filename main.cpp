@@ -10,13 +10,18 @@ int main() {
 	MyFilesystem fs("test_disk.img");
 	fs.format();
 
-	vector<sector_t> allocated_sectors;
+	sector_t root = fs.resolve("/");
 
 	for(int i = 0; i < 200; i++)
 		allocated_sectors.push_back(fs.alloc_sector());
+	sector_t asdf = fs.create("asdf", root);
+	sector_t qwer = fs.create("qwer", root);
 
+	sector_t dir = fs.mkdir("dir", root);
+	sector_t zxcv = fs.create("zxcv", dir);
 
-	fs.debug_heap("heap.dot");
+	sector_t s = fs.resolve("/dir/zxcv");
+	cout << zxcv << endl << s << endl;
 
 	int input = 0;
 
@@ -77,6 +82,7 @@ int main() {
 	}
 	fs.defragment();
 	fs.debug_heap("heap2.dot");
+	fs.debug_tree("fs.dot");
 
 	return 0;
 }
