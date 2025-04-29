@@ -6,6 +6,9 @@
 #include <queue>
 #include <algorithm>
 
+
+#include "avl.h"
+
 using namespace std;
 
 MyFilesystem::MyFilesystem(sector_union_t* disk_ptr, uint64_t disk_size) {
@@ -400,13 +403,12 @@ bool compare_entries(entry_t entry_one, entry_t entry_two){
 vector<entry_t>	 MyFilesystem::readdir(string path){
 	sector_t sector = resolve(path);
 
-	vector<entry_t> entries;
+	AVL avl;
 	for(int index = 0; index<ENTRY_CHILDREN_SIZE; index++){
 		if(CHILDREN!=0){
-			entries.push_back(disk[CHILDREN].entry);
+			avl.Insert(disk[CHILDREN].entry);
 		}
 	}
-	sort(entries.begin(),entries.end(),compare_entries);
-	return entries;
+	return avl.Sort();
 }
 #undef CHILDREN 

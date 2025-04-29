@@ -3,7 +3,7 @@ CFLAGS 		 :=
 
 .PHONY: clean
 
-a.out: main.o filesystem.o
+a.out: main.o filesystem.o avl.cpp
 	$(CC) -g -o $@ $(CFLAGS) $^
 
 main.o: main.cpp
