@@ -5,33 +5,31 @@
 
 #include "avl.h"
 
-#include<iostream>
+#include <iostream>
 using namespace std;
 
-
-
-void test_avl(){
-	name_t words[] = {"hello","math","chicken","wolf","dolphin","memes","apple","banana","whale","zebra"};
-
+void test_avl()
+{
+	name_t words[] = {"hello", "math", "chicken", "wolf", "dolphin", "memes", "apple", "banana", "whale", "zebra"};
 
 	AVL avl;
-	for(int i=0; i<sizeof(words); i++){
+	for (int i = 0; i < sizeof(words); i++)
+	{
 		entry_t entry;
-		strncpy(entry.name,words[i],sizeof(name_t));
+		strncpy(entry.name, words[i], sizeof(name_t));
 		avl.Insert(entry);
 	}
-		
 
 	vector<entry_t> nums = avl.Sort();
 
-	for(int i=0; i<nums.size(); i++){
-		cout<<nums[i].name<<" ";
+	for (int i = 0; i < nums.size(); i++)
+	{
+		cout << nums[i].name << " ";
 	}
-
-
 }
 
-int main() {
+int main()
+{
 	MyFilesystem fs("test_disk.img");
 	fs.format();
 	vector<sector_t> allocated_sectors;
@@ -43,19 +41,19 @@ int main() {
 
 	sector_t dir = fs.mkdir("dir", root);
 
-
 	sector_t cat = fs.create("cat", bin);
 	sector_t tee = fs.create("tee", bin);
 	sector_t ls = fs.create("ls", bin);
-	sector_t pwd= fs.create("pwd", bin);
+	sector_t pwd = fs.create("pwd", bin);
 	sector_t lolcat = fs.create("lolcat", bin);
-	sector_t cowsay = fs.create("cowsay", bin); //the GOAT
+	sector_t cowsay = fs.create("cowsay", bin); // the GOAT
 
 	sector_t s = fs.resolve("/dir/zxcv");
-	//cout << zxcv << endl << s << endl;
+	// cout << zxcv << endl << s << endl;
 	vector<entry_t> entries = fs.readdir("/bin");
-	for(int i=0; i< entries.size(); i++){
-		cout<<entries[i].name<<endl;
+	for (int i = 0; i < entries.size(); i++)
+	{
+		cout << entries[i].name << endl;
 	}
 
 	fs.defragment();
