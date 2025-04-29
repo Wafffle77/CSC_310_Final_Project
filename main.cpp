@@ -9,7 +9,7 @@ using namespace std;
 int main() {
 	MyFilesystem fs("test_disk.img");
 	fs.format();
-
+	vector<sector_t> allocated_sectors;
 	sector_t root = fs.resolve("/");
 
 	for(int i = 0; i < 200; i++)

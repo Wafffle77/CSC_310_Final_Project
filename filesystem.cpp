@@ -171,93 +171,6 @@ sector_t MyFilesystem::alloc_sector() {
 }
 
 void MyFilesystem::free_sector(sector_t sector) {
-<<<<<<< HEAD
-	if(disk->header.heap_size + 1 >= HEADER_RANGES_SIZE) {
-		defragment();
-	}
-
-	uint32_t i = ++disk->header.heap_size;
-	disk->header.ranges[i] = {
-		.start = sector,
-				.end = sector + 1
-			};
-
-			// Percolate
-			while(i >= 1) {
-				allocator_range_t *parent = &disk->header.ranges[i / 2];
-				allocator_range_t *child  = &disk->header.ranges[i];
-
-				if(parent->start > child->start) {
-					allocator_range_t temp = *child;
-					*child = *parent;
-					*parent = temp;
-
-					i /= 2;
-				} else {
-					break;
-				}
-			}
-		}
-
-
-		void MyFilesystem::debug_heap(string path) {
-			ofstream f(path);
-			f << "digraph {" << endl;
-			f << "\t" << disk[0].header.ranges[1].start << " [label=\"" << disk[0].header.ranges[1].start << "-" << disk[0].header.ranges[1].end << "\"]" << endl;
-			for(int i = 2; i < disk[0].header.heap_size; i++) {
-				f << "\t" << disk[0].header.ranges[i].start << " [label=\"" << disk[0].header.ranges[i].start << "-" << disk[0].header.ranges[i].end << "\"]" << endl;
-				f << "\t" << disk[0].header.ranges[i].start << " -> " << disk[0].header.ranges[i / 2].start << endl;
-			}
-			f << "}" << endl;
-		}
-		sector_t my_hash(string name) {
-			sector_t sum = 0;
-			for(int i = 0; i < name.length(); i++){
-				sum *= 7;
-				sum += name[i];
-			}
-			return sum % ENTRY_CHILDREN_SIZE;
-		}
-
-		//access element in the hashtable by name
-		sector_t MyFilesystem::entry_access(name_t name, sector_t block_index) {
-			sector_union_t* block = &disk[block_index];
-			if(block == nullptr){
-				return -1;
-			}
-
-			sector_t* children= block->entry.children;
-			sector_t index = my_hash(name);
-
-			//linear probing
-
-			if(children[index] == 0){
-				return -1; // entry does not exist
-			}
-
-			name_t name_temp; 
-			if(children[index] != -1){
-				strncpy(name_temp, disk[children[index]].entry.name, sizeof(name_t));
-			}
-
-			while(children[index] != 0 && strncmp(name_temp, name, sizeof(name_t)) != 0){
-				index+=1;
-				index%=ENTRY_CHILDREN_SIZE;
-				if(children[index] == 0){
-					break;
-				}
-				//-1 is tombstone
-				if(children[index] == -1){
-					continue;
-				}
-				strncpy(name_temp, disk[children[index]].entry.name, sizeof(name_t));
-			}
-
-			if(children[index]==0) {
-				return -1;
-			}
-			return index;
-=======
     if(disk->header.heap_size + 1 >= HEADER_RANGES_SIZE) {
         defragment();
     }
@@ -394,58 +307,9 @@ sector_t MyFilesystem::entry_insert(entry_t entry, sector_t block_index){
 		//-1 is tombstone
 		if(CHILDREN == -1){
 			break;
->>>>>>> refs/remotes/origin/master
 		}
+	}
 
-<<<<<<< HEAD
-		//insert element in the hashtable by name
-		//currently only uses name but in the future a type could be useful
-		int MyFilesystem::entry_insert(entry_t entry, sector_t block_index){
-
-			sector_union_t* block = &disk[block_index];
-
-			if(block == nullptr){
-				return -1;
-			}
-
-			sector_t* children = block->entry.children;
-			sector_t index = my_hash(entry.name);
-
-			//linear probing
-
-			while(children[index] != 0 && (children[index] != -1)){
-				index += 1;
-				index %= ENTRY_CHILDREN_SIZE;
-				if(children[index] == 0){
-					break;
-				}
-				//-1 is tombstone
-				if(children[index] == -1){
-					break;
-				}
-			}
-
-			children[index] = alloc_sector();
-			sector_t macro_index = children[index];
-			disk[macro_index].entry = entry;
-
-			return 0; // success
-		}
-
-		int MyFilesystem::entry_remove(name_t name,sector_t block_index){
-
-			sector_union_t* block = &disk[block_index];
-			sector_t index = entry_access(name,block_index);
-			if(index==-1){
-				return -1; //throw error
-			}
-
-			free_sector(block->entry.children[index]);
-			block->entry.children[index] = -1; // place tombstone
-			return 0; // success
-
-		}
-=======
 	CHILDREN = alloc_sector();
 	sector_t macro_index = CHILDREN;
 	disk[macro_index].entry = entry;
@@ -523,4 +387,3 @@ sector_t MyFilesystem::mkdir(string name, sector_t dir) {
 
     return entry_insert(child, dir);
 }
->>>>>>> refs/remotes/origin/master
