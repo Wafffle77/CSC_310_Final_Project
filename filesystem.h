@@ -78,6 +78,7 @@ class MyFilesystem {
 
         // File Handles
         int open(string path);
+        int open(sector_t entry);
         void close(int fd);
         void trunc(int fd);
         uint64_t read (int fd, uint8_t *buf, uint64_t count);

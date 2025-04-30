@@ -486,9 +486,10 @@ vector<entry_t> MyFilesystem::readdir(sector_t sector)
 
 int MyFilesystem::open(string path) {
 	sector_t f = resolve(path);
-	if(f == 0) {
-		throw MyException("Entry does not exist");
-	}
+	return open(f);
+}
+
+int MyFilesystem::open(sector_t f) {
 	if(disk[f].entry.type != ENTRY_TYPE_FILE) {
 		throw MyException("Entry is not a file");
 	}
