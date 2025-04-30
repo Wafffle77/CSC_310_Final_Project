@@ -42,14 +42,14 @@ int main()
 
 	sector_t dir = fs.mkdir("dir", root);
 
-	sector_t cat = fs.create("cat", bin);
-	sector_t tee = fs.create("tee", bin);
-	sector_t ls = fs.create("ls", bin);
-	sector_t pwd = fs.create("pwd", bin);
-	sector_t lolcat = fs.create("lolcat", bin);
-	sector_t cowsay = fs.create("cowsay", bin); // the GOAT
+	fs.create("cat", bin);
+	fs.create("tee", bin);
+	fs.create("ls", bin);
+	fs.create("pwd", bin);
+	fs.create("lolcat", bin);
+	fs.create("cowsay", bin); // the GOAT
 
-	sector_t s = fs.resolve("/dir/zxcv");
+	// sector_t s = fs.resolve("/dir/zxcv");
 	// cout << zxcv << endl << s << endl;
 	// vector<entry_t> entries = fs.readdir("/bin");
 	// for (int i = 0; i < entries.size(); i++)
@@ -66,7 +66,7 @@ int main()
 	stsr << f.rdbuf();
 	string data = stsr.str();
 	
-	cout << fs.write(fd, (uint8_t*) data.c_str(), data.length()) << endl;
+	cout << fs.write(fd, (uint8_t*) data.c_str(), data.length() - 1) << endl;
 	fs.close(fd);
 
 	fd = fs.open("/filesystem.cpp");
