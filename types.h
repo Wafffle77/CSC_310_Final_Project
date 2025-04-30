@@ -67,14 +67,6 @@ typedef union {
     header_t header;
 } sector_union_t;
 
-typedef struct{
-	uint8_t busy;
-	uint8_t flags;
-	uint32_t inode;
-	uint32_t offset;
-} Process;
-
-
 // Make sure that sizeof(sector_union_t) <= SECTOR_SIZE
 typedef uint8_t sector_union_larger_than_sector_size[SECTOR_SIZE - sizeof(sector_union_t)];
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "avl.h"
+#include "customErrorClass.h"
 
 using namespace std;
 
@@ -27,29 +28,28 @@ MyFilesystem::MyFilesystem(sector_t sectors)
 	fd = -1;
 }
 
-// TODO: use exceptions in this
 MyFilesystem::MyFilesystem(string path)
 {
 	fd = ::open(path.c_str(), O_RDWR);
 	if (fd == -1)
 	{
-		perror("Unable to open disk");
-		exit(1);
+		string msg = "Unable to open disk: ";
+		throw MyException(msg + strerror(errno));
 	}
 
 	size = lseek(fd, 0, SEEK_END);
 	if (size == (off_t)-1)
 	{
-		perror("Unable to get disk size");
-		exit(1);
+		string msg = "Unable to get disk size: ";
+		throw MyException(msg + strerror(errno));
 	}
 	lseek(fd, 0, SEEK_SET);
 
 	disk = (sector_union_t *)mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (disk == MAP_FAILED)
 	{
-		perror("Unable to map disk");
-		exit(1);
+		string msg = "Unable to map disk: ";
+		throw MyException(msg + strerror(errno));
 	}
 }
 
@@ -171,8 +171,8 @@ sector_t MyFilesystem::alloc_sector()
 
 			if (2 * i > HEADER_RANGES_SIZE)
 			{
+				defragment();
 				break;
-				// TODO: trigger defrag
 			}
 
 			allocator_range_t temp = *parent;
@@ -254,7 +254,7 @@ unordered_map<e_entry_type_t, string> COLOR_MAP = {
 	{ENTRY_TYPE_FILE, "green"},
 	{ENTRY_TYPE_NOTHING, "red"},
 };
-
+ 
 void MyFilesystem::debug_tree(string path)
 {
 	ofstream f(path);
@@ -323,7 +323,7 @@ sector_t MyFilesystem::entry_access(name_t name, sector_t block_index)
 
 	if (CHILDREN == 0)
 	{
-		return -1; // entry does not exist
+		throw MyException("Entry does not exist");
 	}
 
 	name_t name_temp;
@@ -350,7 +350,7 @@ sector_t MyFilesystem::entry_access(name_t name, sector_t block_index)
 
 	if (CHILDREN == 0)
 	{
-		return -1;
+		throw MyException("Entry does not exist");
 	}
 	return CHILDREN;
 }
@@ -360,7 +360,7 @@ sector_t MyFilesystem::entry_access(name_t name, sector_t block_index)
 sector_t MyFilesystem::entry_insert(entry_t entry, sector_t block_index)
 {
 	if (block_index == 0)
-		return 0;
+		throw  MyException("Invalid Index");
 	sector_t index = my_hash(entry.name);
 
 	// linear probing
@@ -392,10 +392,6 @@ sector_t MyFilesystem::entry_remove(name_t name, sector_t block_index)
 {
 	sector_union_t *block = &disk[block_index];
 	sector_t index = entry_access(name, block_index);
-	if (index == -1)
-	{
-		return 0; // throw error
-	}
 
 	free_sector(block->entry.children[index]);
 	block->entry.children[index] = -1; // place tombstone
@@ -423,8 +419,6 @@ sector_t MyFilesystem::resolve(const char *path, sector_t entry)
 	}
 
 	sector_t child = entry_access(name, entry);
-	if (child == 0)
-		return 0;
 	if (path[i] == 0)
 		return child;
 	return resolve(path + i, child);
@@ -432,9 +426,8 @@ sector_t MyFilesystem::resolve(const char *path, sector_t entry)
 
 sector_t MyFilesystem::create(string name, sector_t dir)
 {
-	// TODO: Throw exception
 	if (disk[dir].entry.type != ENTRY_TYPE_DIRECTORY)
-		return 0;
+		throw MyException("Not a directory");
 
 	entry_t child = {
 		.parent = dir,
@@ -451,9 +444,8 @@ sector_t MyFilesystem::create(string name, sector_t dir)
 
 sector_t MyFilesystem::mkdir(string name, sector_t dir)
 {
-	// TODO: Throw exception
 	if (disk[dir].entry.type != ENTRY_TYPE_DIRECTORY)
-		return 0;
+		throw MyException("Not a directory");
 
 	entry_t child = {
 		.parent = dir,
@@ -494,8 +486,11 @@ vector<entry_t> MyFilesystem::readdir(sector_t sector)
 
 int MyFilesystem::open(string path) {
 	sector_t f = resolve(path);
-	if(f == 0 || disk[f].entry.type != ENTRY_TYPE_FILE) {
-		return -1;
+	if(f == 0) {
+		throw MyException("Entry does not exist");
+	}
+	if(disk[f].entry.type != ENTRY_TYPE_FILE) {
+		throw MyException("Entry is not a file");
 	}
 
 	open_file_t entry = {
